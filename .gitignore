@@ -1,0 +1,19 @@
+# Runtime artifacts
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak.*
+*.bak
+*.tmp
+*.swp
+
+# Generated outputs
+result-card-*.html
+*.tsv
+
+# Staging directory
+.skill-publisher-staging/
