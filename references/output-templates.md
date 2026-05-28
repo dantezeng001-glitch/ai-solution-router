@@ -1,8 +1,48 @@
 # Output Templates
 
-Use the template that matches the chosen route.
+Use the template that matches the chosen route. Choose Lightweight or Full based on confidence and complexity.
 
-## Universal Recommendation
+## Template Selection
+
+| Condition | Template |
+| --- | --- |
+| High confidence + single route (no combination) | Lightweight Recommendation |
+| Medium/low confidence OR combination route | Full Recommendation |
+
+## Lightweight Recommendation
+
+Use when the route is obvious and single-layered. Do not over-engineer simple cases.
+
+```markdown
+# AI工具选型建议
+
+## 需求理解
+- 任务：
+- 输入 → 输出：
+- 频率：
+- 置信度：__%
+
+## 推荐路线
+- 环境：文本 / Browser Agent / Coding Agent
+- 控制：Prompt / Skill / Workflow
+- 知识层：无 / RAG / 企业知识
+- 一句话理由：
+
+## 实现难度与前提
+- 难度：★~★★★★★
+- 前提条件：
+
+## 具体执行方案
+（放对应路线的产物）
+
+## 什么时候该换路线
+- 升级信号：
+- 降级信号：
+```
+
+## Full Recommendation
+
+Use when confidence is medium/low, the route is a combination, or trade-offs need explanation.
 
 ```markdown
 # AI工具选型建议
@@ -15,49 +55,34 @@ Use the template that matches the chosen route.
 - 当前痛点：
 - 置信度：__%
 
-## 2. 推荐结论
-推荐路线：AI Chat / Skill / Workflow / Knowledge Base/RAG / AI Browser Agent / AI Coding Agent / 组合方案
+## 2. 三轴判断
+- 环境判断（Decision A）：文本 / Browser Agent / Coding Agent → 依据：
+- 控制判断（Decision B）：Prompt / Skill / Workflow → 依据：
+- 知识判断（Overlay）：无 / RAG / 企业知识 → 依据：
 
-单工具是否足够：是/否
+## 3. 推荐路线
+最终路线 = 环境 × 控制 × 知识
 
-如需组合：
-- 主工具：
-- 知识层：
-- 执行层：
-- 可复用逻辑层：
+## 4. 实现难度评估
+- 综合难度：★~★★★★★
+- 用户能力匹配：
+- 如难度不匹配的降级方案：
 
-一句话理由：
-
-## 3. 为什么不是其他路线
+## 5. 为什么不是其他路线
 | 路线 | 不推荐原因 |
 
-## 4. 具体执行方案
+## 6. 具体执行方案
 （放对应路线的产物）
 
-## 5. 验证方法
+## 7. 验证方法
 （用户如何用一次小测试确认路线正确）
 
-## 6. 仍需确认的假设
+## 8. 什么时候该换路线
+- 升级信号：
+- 降级信号：
+
+## 9. 仍需确认的假设
 | 假设 | 影响 | 如何验证 |
-```
-
-## Combination Output
-
-Use this only when one tool is not enough.
-
-```markdown
-## 推荐工具组合
-| 层级 | 推荐 | 作用 | 为什么需要 |
-| --- | --- | --- | --- |
-| 主工具 |  | 用户主要在哪里完成工作 |  |
-| 知识层 |  | 内部知识检索/RAG/引用 |  |
-| 执行层 |  | 点击网页/跑代码/执行工作流 |  |
-| 可复用逻辑层 |  | Prompt/Skill/SOP规则 |  |
-
-## 组合边界
-- 单工具不够的原因：
-- 不建议继续增加工具的原因：
-- 最小可验证版本：
 ```
 
 ## AI Chat Output
@@ -88,10 +113,10 @@ Use this only when one tool is not enough.
 - 如果信息不足，先问我最多3个关键问题。
 ```
 
-## 使用建议
-- 适合单次或轻量重复任务。
-- 如果每次都要复制大量上下文，升级为 Skill。
-- 如果必须按固定节点执行，升级为 Workflow。
+## 什么时候该升级
+- 同样的上下文复制粘贴 ≥ 3 次 → 升级为 Skill
+- 需要 AI 操作网页 → 升级为 Browser Agent
+- 交付物需要是文件/代码 → 升级为 Coding Agent
 ````
 
 ## Skill Output
@@ -119,6 +144,10 @@ Use this only when one tool is not enough.
 - `references/[domain].md`（如需要）
 - `agents/openai.yaml`（如在 Codex 使用）
 - 打包为 `[skill-name].zip`（如需要分享）
+
+## 什么时候该换路线
+- 规则每次都在变，没有稳定模式 → 降级为 Prompt
+- 出现审批/系统集成/跳步出事 → 升级为 Workflow
 ```
 
 ## Workflow Output
@@ -129,7 +158,7 @@ Use this only when one tool is not enough.
 示例平台：Dify、扣子、钉钉机器人/AI助手、n8n、Make、Zapier、内部工作流平台等。
 
 ## 节点设计
-| 节点 | 作用 | 输入 | 输出 | 失败处理 |
+| 节点 | 作用 | 输入 | 输出 | 执行者（AI/人/系统） | 失败处理 |
 
 ## 决策规则
 | 条件 | 去向 | 说明 |
@@ -139,6 +168,9 @@ Use this only when one tool is not enough.
 
 ## 测试用例
 | 用例 | 输入 | 预期输出 |
+
+## 什么时候该降级
+- 实际没有审批/集成需求，只是"有步骤" → 降级为 Skill + 人工兜底
 ```
 
 ## Enterprise Knowledge / RAG Output
@@ -151,8 +183,8 @@ Use this only when one tool is not enough.
 （说明为什么内部知识不是简单粘贴上下文能解决）
 
 ## 知识场景判断
-- 简单查阅/问答：优先企业内部知识搜索。若企业使用钉钉，可先考虑钉钉企业知识搜索。
-- 知识驱动工作流/Agent：使用知识库/RAG + 工作流/Agent。若企业使用钉钉，可把钉钉悟空作为示例方案，用企业文档/知识作为知识层。
+- 简单查阅/问答：优先企业内部知识搜索。
+- 知识驱动工作流/Agent：使用知识库/RAG + 工作流/Agent。
 - 定制应用/复杂权限/多源知识：使用自定义 RAG + AI 编程工具搭建。
 
 ## 知识源清单
@@ -166,6 +198,9 @@ Use this only when one tool is not enough.
 - 知识过期：
 - 引用准确性：
 - 人工确认点：
+
+## 什么时候该降级
+- 实际只用几份文档且不再增长 → 降级为粘贴上下文
 ```
 
 ## Browser Agent Output
@@ -173,9 +208,10 @@ Use this only when one tool is not enough.
 ````markdown
 ## 推荐工具类型
 AI 浏览器代理。
+示例：ChatGPT agent mode、Cursor browser、各类浏览器自动化 Agent 等。
 
 ## 适用原因
-（说明为什么需要浏览器环境，而不是普通聊天或代码工具）
+（说明为什么需要浏览器环境，而不是粘贴文本或代码工具）
 
 ## 执行Prompt
 ```text
@@ -200,6 +236,10 @@ AI 浏览器代理。
 - 需要登录的网站：
 - 需要提供的数据：
 - 需要人工确认的动作：
+
+## 什么时候该升级
+- 抓取后需要复杂数据处理/生成文件 → 加 Coding Agent
+- 每周重复且规则固定 → 加 Skill 打包规则
 ````
 
 ## Coding Agent Output
@@ -237,4 +277,7 @@ AI 编程工具 + Skills。
 
 ## 下一步
 如果这是产品 demo，读取 `references/demo-build-branch.md`；需要生成详细 PRD、技术文档、Mock、验收或 README 时，再读取 `references/product-demo-templates.md`。
+
+## 什么时候该降级
+- 生成的脚本只用了一次就没再用 → 降级为 Chat
 ````

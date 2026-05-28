@@ -2,194 +2,184 @@
 
 Use this after discovery to route the user to the simplest reliable AI solution.
 
-## First Principle: Single Tool First, Combination When Needed
+## Core Principle: Minimum Sufficient Solution
 
-Prefer a single tool when it can complete the task reliably.
+Start from the simplest route. Escalate only when there is a hard, testable reason AND the implementation difficulty is justified. Heavier solutions need higher justification; lighter solutions need only a confirmed need.
 
-Recommend a combination only when at least one condition is true:
-
-- The task needs a knowledge source plus an execution tool, such as internal policy retrieval plus workflow execution.
-- The task has distinct phases that require different environments, such as browser research plus coding implementation.
-- The task needs persistent reusable instructions plus a tool, such as a Skill plus AI coding agent.
-- The task needs strict routing/approval plus AI generation, such as workflow platform plus AI chat/model node.
-- The task needs internal knowledge permissioning, citations, or RAG in addition to generation or execution.
-
-When recommending a combination, name the layers:
+Difficulty ordering:
 
 ```text
-Primary tool: the place where the user works
-Knowledge layer: knowledge base/RAG/search if needed
-Execution layer: workflow/browser/coding agent if needed
-Reusable logic layer: skill/prompt template if needed
+Prompt(★) < Browser Agent(★★) < Skill(★★★) < Coding Agent(★★★~★★★★) < RAG(★★★★) < Workflow(★★★★★)
 ```
 
-## Step 1: Cost - Is This Easy Enough for Chat?
+## Model Structure
 
-Choose **AI Chat** when:
+Three independent decisions, evaluated in parallel, results combined:
 
-- The user can describe the task in one short prompt.
-- The input is small enough to paste into a chat.
-- A few rounds of clarification are enough.
-- The output is text, outline, classification, rewrite, draft, summary, brainstorming, or simple table.
-- Even if frequent, the task does not require strict repeatability or tool integration.
+```text
+Decision A: Execution Environment — "What capability does the AI need?"
+Decision B: Control Level          — "How much should the AI be constrained?"
+Overlay:    Knowledge Source        — "What knowledge does the AI need?"
 
-Logic:
+Final route = Environment × Control × Knowledge
+```
 
-> If a few chat turns reliably produce the result, do not add workflow or agent complexity.
+These are not sequential filters. Each decision is made independently, then the results are combined into the final route.
 
-Examples:
+## Decision A: Execution Environment
 
-- Rewrite an email.
-- Summarize a meeting transcript.
-- Generate campaign ideas.
-- Draft a weekly report from pasted notes.
-- Analyze a small table pasted into chat.
+Determines WHERE the work physically happens. This is a hard technical constraint with no subjective judgment, so evaluate it first.
 
-Output:
+### Boundary Questions
 
-- Recommended chat tool category: general AI chat.
-- A ready-to-use prompt.
-- Optional prompt variables and examples.
-- If internal knowledge is needed, add a knowledge search/RAG note instead of pretending pasted context is enough.
+**Text ↔ Browser Agent**
 
-## Step 2: Path - Are the Steps Fixed?
+```text
+"任务所需的信息和操作，能通过粘贴文本给 AI 完成？还是 AI 必须打开网页点击/填写/抓取？"
+```
 
-Choose **Skill** when:
+- Can paste → Text environment
+- Must interact with web pages → Browser Agent
 
-- The job is repeatable but still benefits from AI judgment.
-- There are templates, SOPs, examples, rubrics, style rules, or domain context.
-- The user wants consistent outputs across future sessions.
-- The process can tolerate some agent discretion.
+**Text ↔ Coding Agent**
 
-Choose **Workflow** when:
+```text
+"交付物是对话里的一段文字？还是必须生成文件/跑脚本/构建可运行的东西？"
+```
 
-- The steps are strict and should not be skipped or reordered.
-- Inputs/outputs are structured.
-- There are approvals, routing rules, database writes, notifications, or integrations.
-- The result needs observability, permissions, or repeated operation by non-experts.
-- The user wants a deployed bot or automation in Dify, Coze, DingTalk bot/AI assistant, Zapier/Make/n8n, internal automation, or similar platforms.
+- Conversation text is enough → Text environment
+- Must produce files/code/runnable artifacts → Coding Agent
 
-Logic:
+### Difficulty Gates
 
-> If the path is known, constrain the AI. Use a skill for flexible repeatable judgment. Use a workflow for strict execution.
+| Environment | Difficulty | Gate |
+| --- | --- | --- |
+| Text | ★ | None. Default starting point. |
+| Browser Agent | ★★ | None. Low cost, use when the need is confirmed. |
+| Coding Agent | ★★★~★★★★ | "有人能看懂 AI 生成的代码并验收吗？" NO → downgrade to Text + manual operation, note the capability gap. |
 
-Output for Skill:
+### Multi-Environment Tasks
 
-- Skill name.
-- Trigger conditions.
-- Workflow.
-- References or templates needed.
-- Example user prompts.
+When both boundary questions return YES (need both browser AND code):
 
-Output for Workflow:
+- **Separable by handoff artifact**: split into sub-tasks. Sub-task A produces a file/data that sub-task B consumes. Route each sub-task independently.
+- **Inseparable** (two environments alternate with no clean split): route to Coding Agent (most coding agents include browser capabilities) or Workflow platform for orchestration.
 
-- Node map.
-- Node inputs/outputs.
-- Decision rules.
-- Human approval points.
-- Error handling.
-- Test cases.
+## Decision B: Control Level
 
-## Knowledge Overlay: Does It Need Internal Enterprise Knowledge?
+Determines HOW MUCH the AI is constrained. This decision is made WITHIN whichever environment was selected in Decision A. It applies to all environments — text, browser, and coding.
 
-Apply this overlay at any step. It can change a single-tool recommendation into a small combination.
+### Three Levels
 
-Choose **enterprise knowledge search** when:
+| Level | Core trait | Who executes |
+| --- | --- | --- |
+| Prompt | One-off instruction, use and discard | AI alone |
+| Skill | Reusable rule package, AI has judgment room | AI alone (reads rules, executes autonomously) |
+| Workflow | Platform orchestration, multiple actors | Platform coordinates AI + humans + external systems |
 
-- The user mainly wants to find answers in internal documents, policies, SOPs, meeting notes, or past cases.
-- The task is question-answering or citation, not multi-step execution.
-- The user already works in an enterprise collaboration suite.
+The boundary between Skill and Workflow is NOT "whether steps are fixed" — Skills can have fixed steps too. The boundary is "whether the AI is the sole executor."
 
-Example recommendation:
+### Boundary: Prompt ↔ Skill
 
-- If the company uses DingTalk and the need is simple internal knowledge lookup, recommend DingTalk enterprise knowledge search / enterprise search first.
-- Reason: the knowledge, permissions, and collaboration context are already inside the enterprise workspace.
+| Test | Question | YES | NO |
+| --- | --- | --- | --- |
+| Need | "下次做同样的事，需要重新跟 AI 解释规则/标准/上下文吗？" | → check difficulty | → **Prompt** |
+| Difficulty | "这件事 ≥ 每月做一次，且有明确的规则/案例可以固化？" | → **Skill** | → Prompt + save a template doc for manual pasting |
 
-Choose **knowledge base/RAG + workflow/agent** when:
+### Boundary: Skill ↔ Workflow
 
-- Internal knowledge must drive decisions, routing, drafting, classification, or repeated automation.
-- The output needs source citations, permission control, or stable retrieval from many internal docs.
-- The user wants a bot, workflow, or agent that answers or acts based on company knowledge.
+This is the largest difficulty gap (★★★ → ★★★★★), so the escalation gate is the strictest.
 
-Example recommendation:
+**Need tests** — hit ANY ONE to enter Workflow territory:
 
-- If the company uses DingTalk and wants to build an internal-knowledge-driven workflow or agent, recommend DingTalk Wukong as an example AI work platform, with the company's DingTalk documents/knowledge as the knowledge layer.
-- For non-DingTalk stacks, recommend a RAG-capable workflow/agent platform or custom RAG service plus the chosen workflow/agent tool.
+| # | Question | YES → continue | NO → Skill is enough |
+| --- | --- | --- | --- |
+| 1 | "过程中需要读写外部系统吗？"（写数据库/调 API/发通知/触发其他工具） | continue | Skill |
+| 2 | "跳过某步的后果比'输出质量差'更严重吗？"（合规/数据不一致/钱花错/人没被通知到） | continue | Skill |
+| 3 | "流程中有必须等人审批/确认才能继续的环节吗？" | continue | Skill |
 
-Choose **custom RAG + coding agent** when:
+**Difficulty tests** — must pass ALL to confirm Workflow:
 
-- The knowledge sources are scattered, large, permission-sensitive, or need custom indexing/evaluation.
-- The user needs a bespoke app, demo, retrieval pipeline, or integration with existing systems.
+| # | Question | YES → continue | NO → downgrade |
+| --- | --- | --- | --- |
+| 1 | "任务频率 ≥ 每周？" | continue | → Skill + humans handle approvals/integrations manually |
+| 2 | "有人能搭建和持续维护这个工作流？" | → **Workflow** | → Skill + humans handle approvals/integrations manually |
 
-Output for knowledge/RAG cases:
+Any need test YES + both difficulty tests YES → Workflow.
+Otherwise → Skill + manual fallback for system interactions.
 
-- Knowledge source inventory.
-- Retrieval/citation requirements.
-- Permission and privacy constraints.
-- Recommended base tool plus knowledge layer.
-- A small validation test: 5-10 representative questions with expected source documents.
+## Knowledge Overlay
 
-## Step 3: Workspace - Where Does the Heavy Adaptive Work Happen?
+Evaluated independently from environment and control. The result is layered on top of the main route.
 
-Choose **AI Browser Agent** when:
+### Boundary: No Layer ↔ RAG
 
-- The work happens mainly on websites or web apps.
-- It requires searching, comparing web pages, clicking, filling forms, copying data, downloading files, or lightweight web-based data analysis.
-- The user needs their logged-in browser session or browser-visible context.
-- It does not require deep codebase editing.
+```text
+"AI 完成任务需要参考的内部资料，能一次性粘贴进对话吗？"
+```
 
-Examples:
+- Can paste (< a few pages) → No knowledge layer needed.
+- Cannot paste (too many / too scattered / growing / permission-controlled) → check difficulty.
 
-- Gather supplier info from several websites.
-- Use a web admin panel to create records.
-- Compare web search results and extract a shortlist.
-- Fill repeated web forms with human review.
+### Difficulty Gates for RAG (★★★★)
 
-Tool examples:
+| # | Question | YES → continue | NO → downgrade |
+| --- | --- | --- | --- |
+| 1 | "查询频率 ≥ 每周？" | continue | → manually select key excerpts to paste |
+| 2 | "文档会持续更新，不是一次性的？" | continue | → one-time summary document |
+| 3 | "有人/有平台能维护知识库索引？" | → **RAG** | → Skill + manually updated summary docs |
 
-- GPT agent/agent mode.
-- AI browser tools.
-- Browser automation agents such as Tabbit-like tools.
-- In Codex, use browser automation when local or web inspection is needed.
+All three YES → add RAG layer. Otherwise use the lower-cost alternative.
 
-Output:
+## Route Composition
 
-- Tool category.
-- Browser-agent task prompt.
-- Preconditions: login, pages, data, stop rules.
+The three decisions produce three independent results. Cross them to get the final route:
 
-Choose **AI Coding Agent + Skills** when:
+| Environment | Control | Knowledge | Final Route |
+| --- | --- | --- | --- |
+| Text | Prompt | None | Chat + Prompt |
+| Text | Skill | None | Skill |
+| Text | Skill | RAG | Skill + RAG |
+| Text | Workflow | Enterprise knowledge | Workflow + Enterprise Knowledge Base |
+| Browser | Prompt | None | Browser Agent + Execution Prompt |
+| Browser | Skill | None | Skill + Browser Agent |
+| Browser | Skill | RAG | Skill + Browser Agent + RAG |
+| Coding | Prompt | None | Coding Agent + Handoff Prompt |
+| Coding | Skill | None | Skill + Coding Agent |
+| Coding | Skill | RAG | Skill + Coding Agent + RAG |
+| Coding | Workflow | None | Workflow + Code Nodes |
 
-- The work involves a codebase, multi-file edits, app/demo creation, local scripts, data pipelines, complex notebooks, or multi-file analysis.
-- The desired output is runnable software, a demo, a data processing tool, a script, or a repeatable technical artifact.
-- The task benefits from reading files, editing files, running tests, verifying outputs, and packaging deliverables.
-
-Examples:
-
-- Build an internal dashboard demo.
-- Turn a PRD into a working app.
-- Process many CSV/Excel/PDF files with scripts.
-- Add an AI feature to an existing product.
-- Create a local tool with sample data and mock services.
-
-Tool examples:
-
-- Codex, Claude Code, Cursor, Windsurf, or similar coding agents.
-- Pair with a dedicated skill when the workflow is repeatable.
-
-Output:
-
-- Coding-agent handoff prompt.
-- Suggested project structure.
-- Demo/verification plan.
-- If the goal is product development, use the demo-build branch.
+Combinations emerge naturally from independent decisions. No separate "should I combine?" judgment is needed.
 
 ## Recommendation Confidence
 
-Use these labels:
-
-- **High confidence**: one route clearly wins and alternatives are weaker.
-- **Medium confidence**: one route wins, but one missing detail could change it.
-- **Low confidence**: ask another question before recommending.
+| Label | Meaning |
+| --- | --- |
+| High | One route clearly wins. All boundary questions have unambiguous answers. |
+| Medium | One route wins, but one detail could change the environment or control level. |
+| Low | Ask another question before recommending. |
 
 Always state what would change the recommendation.
+
+## Upgrade and Downgrade Triggers
+
+Recommendations are not final. Include these signals in the output so the user knows when to re-evaluate.
+
+### Upgrade Signals
+
+| From | To | Trigger |
+| --- | --- | --- |
+| Prompt | Skill | Same context copy-pasted ≥ 3 times; output quality varies too much across sessions |
+| Skill | Workflow | Real approval/integration/notification needs emerge; skipping a step causes an incident |
+| Text route | Browser Agent | User frequently operates web pages manually then pastes results to AI |
+| Text route | Coding Agent | Data exceeds paste capacity; deliverable must be runnable files |
+| Paste context | RAG | User spends significant time finding and pasting excerpts every time; document corpus keeps growing |
+
+### Downgrade Signals
+
+| From | To | Trigger |
+| --- | --- | --- |
+| Workflow | Skill + manual | No actual approval/integration need; "having steps" was mistaken for needing enforcement |
+| RAG | Paste context | Only a few documents are actually used; corpus is not growing |
+| Coding Agent | Chat | Generated scripts were used once and never again |
+| Skill | Prompt | Packaged rules change every time; no stable pattern to reuse |

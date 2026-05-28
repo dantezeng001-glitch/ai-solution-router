@@ -1,6 +1,6 @@
 ---
 name: ai-solution-router
-description: Use when a user has a vague task, workflow, business problem, product idea, repetitive job, research/data/code need, or "what AI tool should I use" question and needs help deciding whether the right solution is AI chat prompts, a reusable skill, a strict workflow/automation, an AI browser agent, or an AI coding agent/demo build. Trigger for AI tool selection, demand discovery, prompt generation, skill/workflow design, browser-agent task planning, or standalone product demo development from requirements to runnable prototype.
+description: "Use when a user has a vague task, workflow, business problem, product idea, repetitive job, research/data/code need, or 'what AI tool should I use' question. Also trigger on: AI工具选型, 该用什么AI, 用什么工具, 需求分析, AI方案推荐, 帮我选工具, 我想用AI做, tool selection, demand discovery, prompt generation, skill/workflow design, browser-agent task planning, or product demo development."
 ---
 
 # AI Solution Router
@@ -14,70 +14,84 @@ Start from discovery, not tool preference. The same surface request can map to d
 ## Core Rules
 
 - Ask exactly one question at a time during discovery.
-- Continue with targeted follow-ups until confidence reaches at least 95%.
-- Do not recommend a tool category before understanding the real task, current workaround, frequency, cost, input/output, and success criteria.
+- Continue with targeted follow-ups until you can answer all items in the confidence checklist (see `references/discovery.md`). If the user's first message already covers 3 of 4 key dimensions (input, output, frequency, workspace), skip to routing and mark gaps as assumptions.
+- Do not recommend a tool category before understanding the real task, current workaround, frequency, cost, input/output, success criteria, and user capability.
 - Use the decision tree only after discovery, not as a rigid questionnaire.
-- Recommend the simplest tool or tool combination that reliably gets the job done.
-- Prefer a single tool when one tool is enough. Recommend combinations only when the user's inputs, knowledge sources, execution environment, or risk boundaries genuinely require more than one layer.
-- Prefer prompts for cheap/simple tasks, skills or workflows for repeatable SOP tasks, and agents only for heavy uncertain tasks.
-- When internal enterprise knowledge search, citation, or reuse is involved, explicitly consider a knowledge base/RAG solution layer.
+- Start from the simplest route. Escalate only when there is a hard, testable reason AND the implementation difficulty is justified.
+- Route through three independent decisions: execution environment (where), control level (how constrained), and knowledge source (what the AI knows). Combine the results — do not treat the six route types as a flat pick-one list.
+- Heavier solutions need higher justification. Prompt and Browser Agent need only a confirmed need; Skill needs monthly recurrence; Coding Agent needs someone who can review output; RAG and Workflow need weekly frequency plus ongoing maintenance capacity.
 - When recommending specific current products, treat product names as examples unless the user asks for a current market comparison.
-- If the recommended path is "coding agent/demo", follow the standalone demo workflow in `references/demo-build-branch.md` and load `references/product-demo-templates.md` when detailed product or technical templates are needed.
+- This skill's job ends at route handoff. For Coding Agent routes, produce a handoff prompt; do not embed full product development inside the router. The optional `references/demo-build-branch.md` and `references/product-demo-templates.md` are extended modules — load them only when the user explicitly asks for end-to-end product development from this same conversation.
 
 ## Workflow
 
 1. **Discovery**
+   - Input: user's initial message describing their task or problem.
    - Read `references/discovery.md`.
-   - Start with the opening question.
-   - Ask one question at a time and update your confidence.
-   - Stop when the 95% readiness checklist is satisfied.
+   - Start with the opening question. If the user's first message covers 3 of 4 key dimensions (input, output, frequency, workspace), skip to Step 2 and mark gaps as assumptions.
+   - Ask one question at a time. Update your confidence after each answer.
+   - Output: completed confidence checklist with all items answered or marked as assumptions.
+   - Stop condition: you can make all three routing decisions and explain why two alternatives are weaker.
 
 2. **Route Selection**
+   - Input: completed confidence checklist from Step 1.
    - Read `references/decision-tree.md`.
-   - Classify the task by:
-     - Cost: easy vs heavy.
-     - Path: fixed SOP vs adaptive logic.
-     - Workspace: chat, workflow platform, browser, code/data environment.
-     - Knowledge: whether internal enterprise knowledge retrieval, citation, permission, or RAG is required.
-   - Produce a route recommendation with reasoning and the nearest alternative.
+   - Make three independent decisions:
+     - Decision A — Execution environment: text, browser, or code?
+     - Decision B — Control level: prompt, skill, or workflow?
+     - Overlay — Knowledge source: paste context, RAG, or enterprise knowledge?
+   - For each decision, apply both the need test and the difficulty gate.
+   - Combine the three results into the final route.
+   - Output: route = environment × control × knowledge, with reasoning per axis.
 
-3. **Generate the Right Output**
+3. **Route Confirmation** *(checkpoint — do not skip)*
+   - Input: route recommendation from Step 2.
+   - Present the recommendation using the Lightweight or Full template from `references/output-templates.md`. Choose Lightweight when confidence is High and the route is a single tool; choose Full otherwise.
+   - Explicitly state: three-axis judgment, difficulty assessment, upgrade/downgrade triggers, and remaining assumptions.
+   - Ask the user to confirm, adjust, or reject.
+   - If confirmed → proceed to Step 4.
+   - If adjusted → revise the affected axis and re-present.
+   - If rejected → return to Step 1 with a targeted follow-up based on the disagreement.
+   - Output: user-confirmed route.
+
+4. **Generate the Right Output**
+   - Input: user-confirmed route from Step 3.
    - Read `references/output-templates.md`.
    - For AI chat: generate a ready-to-use prompt.
    - For skill: read `references/skill-creation-guide.md`, then generate a skill brief or full skill files if requested.
    - For workflow: generate node design, inputs/outputs, decision rules, and test cases.
    - For browser agent: generate tool choice guidance and an execution prompt.
-   - For coding agent/demo: generate or invoke the demo-build branch.
+   - For coding agent: generate a handoff prompt (see Coding Agent Output in `references/output-templates.md`). Stop here unless the user explicitly asks to continue with full product development in this conversation — in that case, load `references/demo-build-branch.md`.
+   - Output: concrete artifact matching the confirmed route.
 
-4. **Confirm and Package**
-   - Ask the user whether they want the recommended artifact created as files.
+5. **Confirm and Package**
+   - Input: generated artifact from Step 4.
+   - Ask the user whether they want the artifact created as files.
    - If creating files, use clear names such as `AI工具选型建议.md`, `推荐Prompt.md`, `workflow-design.md`, or a skill folder.
    - Include assumptions, confidence score, and what would change the recommendation.
+   - Output: delivered files or in-conversation artifact.
 
 ## Decision Summary
 
-```text
-1. Cost: Is the work easy enough to finish by chatting a few turns?
-   yes -> AI Chat prompt
-   no  -> continue
+Three independent decisions, combined into the final route. Full questions, difficulty gates, and downgrade paths live in `references/decision-tree.md` — load that file before routing.
 
-2. Path: Are the steps fixed with SOPs/examples?
-   yes -> Skill or strict workflow
-   no  -> continue
+| Axis | Core question |
+| --- | --- |
+| A. Environment | Where does the work physically happen — text, browser, or code? |
+| B. Control | How constrained must the AI be — one-off prompt, reusable skill, or platform-orchestrated workflow? |
+| C. Knowledge | Can references be pasted, or is a RAG / enterprise knowledge layer needed? |
 
-3. Workspace: Where must the work happen?
-   browser/web -> AI browser agent
-   code/multi-file data/product demo -> AI coding agent + skills
-```
+Final route = A × B × C. Each escalation needs both a need test AND a difficulty justification.
 
 ## Output Must Include
 
 - User need summary.
 - Confidence score and remaining assumptions.
-- Recommended solution category.
-- Why this category beats the alternatives.
+- Recommended route (environment × control × knowledge).
+- Why this route beats the alternatives.
 - Suggested tool examples, framed as examples rather than exclusive choices.
-- Whether a single tool is enough or a combination is justified.
+- Difficulty assessment and whether the user has the capability to implement.
+- Upgrade and downgrade triggers: what signals mean the route should change.
 - Concrete next artifact: prompt, skill spec, workflow node map, browser-agent prompt, or coding-agent handoff.
 - Validation method: how the user can test whether the recommendation is right.
 
@@ -88,5 +102,5 @@ Start from discovery, not tool preference. The same surface request can map to d
 - `references/enterprise-knowledge-rag.md`: use when the task touches internal company knowledge, documents, policies, SOPs, cases, search, citations, or permissions.
 - `references/output-templates.md`: use when producing the final artifact.
 - `references/skill-creation-guide.md`: use when the chosen route is Skill, especially when creating a standalone skill folder or zip.
-- `references/demo-build-branch.md`: use only for code-heavy, multi-file data, or product-demo paths.
-- `references/product-demo-templates.md`: use only inside the demo-build branch when generating analysis reports, PRDs, technical docs, mock plans, acceptance docs, or README/demo-data specs.
+- `references/demo-build-branch.md`: **optional extended module**. Load only when the user explicitly asks to continue from route handoff into full product development inside the same conversation.
+- `references/product-demo-templates.md`: **optional extended module**. Load only inside the demo-build branch when generating PRDs, technical docs, mock plans, acceptance docs, or README/demo-data specs.

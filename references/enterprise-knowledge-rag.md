@@ -6,29 +6,33 @@ Use this reference when the user's task depends on internal company knowledge, p
 
 Do not treat internal enterprise knowledge as ordinary chat context unless the user only needs a small one-off answer from pasted text.
 
-If the task needs repeated retrieval, citations, permissions, or many internal documents, explicitly recommend a **knowledge base / RAG** layer.
+If the task needs repeated retrieval, citations, permissions, or many internal documents, explicitly consider a **knowledge base / RAG** layer — but apply the difficulty gates from `references/decision-tree.md` before recommending it.
 
-## Routing
+## Three Tiers (lightest first)
 
-### 1. Simple Internal Knowledge Search
+Always recommend the lightest tier that meets the need. Only escalate when there is a hard reason.
 
-Use this when:
+### Tier 1: Enterprise-Native Knowledge Search
+
+Use when:
 
 - The user only needs to find answers in internal documents.
 - No multi-step execution is needed.
-- The answer should respect existing enterprise permissions.
+- The company already uses a collaboration suite with built-in AI search.
 
 Recommendation pattern:
 
 ```text
-Primary route: enterprise knowledge search
-Example: if the company uses DingTalk, start with DingTalk enterprise knowledge search.
+Primary route: enterprise knowledge search (built into the user's existing collaboration platform)
+Examples: DingTalk enterprise search, Feishu AI search, Notion AI, Microsoft Copilot, Google Workspace AI
 Output: search/query prompt and validation questions.
 ```
 
-### 2. Internal Knowledge + Workflow or Agent
+Choose the example that matches the user's stated platform. If the user has not stated a platform, ask which one they use rather than assuming.
 
-Use this when:
+### Tier 2: Knowledge Base / RAG + Workflow or Agent
+
+Use when:
 
 - Internal knowledge must drive drafting, classification, approval routing, customer response, SOP execution, or agent decisions.
 - The user wants a bot/workflow/agent that repeatedly uses company knowledge.
@@ -37,14 +41,14 @@ Use this when:
 Recommendation pattern:
 
 ```text
-Primary route: workflow/agent
-Knowledge layer: enterprise knowledge base/RAG
-Example: if the company uses DingTalk, use DingTalk Wukong as the agent/work platform example, with DingTalk docs/enterprise knowledge as the knowledge layer.
+Primary route: workflow/agent platform with knowledge base integration
+Examples: DingTalk Wukong, Feishu AI assistant, Dify + knowledge base, Coze + knowledge base
+Knowledge layer: enterprise knowledge base / RAG
 ```
 
-### 3. Internal Knowledge + Custom App/Demo
+### Tier 3: Custom RAG + Coding Agent
 
-Use this when:
+Use when:
 
 - Sources are scattered across many systems.
 - Permissions, freshness, retrieval quality, or evaluation need custom design.
@@ -59,29 +63,32 @@ Reusable logic: skill/prompt templates
 Output: demo-build branch with RAG requirements.
 ```
 
-## DingTalk Example Guidance
+## Difficulty Gates (aligned with decision-tree.md)
 
-Use DingTalk examples only when the user works in or is open to DingTalk.
+Before recommending Tier 2 or 3, check the RAG difficulty gates:
 
-- **Simple knowledge lookup**: mention DingTalk enterprise knowledge search as the lighter first choice.
-- **Knowledge-driven workflow/agent**: mention DingTalk Wukong as an example enterprise AI work platform for agent/workflow-style execution over enterprise context.
-- **Skill packaging**: if the user wants reusable know-how, Wukong's skill mechanism can be a possible target, while Codex-style `SKILL.md` zip remains a portable option.
+| # | Gate | YES → continue | NO → downgrade |
+| --- | --- | --- | --- |
+| 1 | Query frequency ≥ weekly? | continue | → Tier 1 or paste excerpts |
+| 2 | Documents update regularly? | continue | → one-time summary document |
+| 3 | Someone can maintain the knowledge index? | → proceed with RAG | → Tier 1 + manually curated excerpts |
 
-Phrase examples:
+All three YES → Tier 2 or 3 is justified.
+Any NO → downgrade to the lighter alternative shown in the table.
 
-```text
-如果你们的内部文档主要在钉钉里，并且只是想查制度/案例/流程，先用钉钉企业知识搜索就够了。
-```
+## Platform Neutrality
 
-```text
-如果你希望 AI 不只是查知识，而是基于内部知识自动生成方案、流转审批、写入文档或形成 Agent 工作流，可以考虑“钉钉悟空 + 企业知识库/RAG”的组合。
-```
+When recommending specific platforms, follow these rules:
+
+- Use the platform the user already mentioned. If they said "we use DingTalk", use DingTalk examples. If they said "we use Feishu", use Feishu examples.
+- If the user has not stated a platform, list 2-3 examples across ecosystems rather than defaulting to one.
+- Do not embed platform-specific recommendation language (e.g. pre-written sales phrases). Let the routing logic speak for itself.
 
 ## Knowledge Requirements Checklist
 
 Before recommending the final architecture, identify:
 
-- Knowledge sources: DingTalk docs, wiki, drive, CRM, tickets, meeting notes, SOPs, PDFs, spreadsheets, databases.
+- Knowledge sources: docs, wiki, drive, CRM, tickets, meeting notes, SOPs, PDFs, spreadsheets, databases.
 - Retrieval scope: all company, department, project, role-based, or user-provided files.
 - Permission rules: who can see what.
 - Citation needs: source title, URL, paragraph, timestamp, owner.
@@ -95,12 +102,12 @@ Before recommending the final architecture, identify:
 ## 企业知识 / RAG 判断
 - 是否涉及内部知识：是/否
 - 知识用途：查阅 / 问答 / 生成 / 决策 / 执行 / 审批
-- 推荐知识层：企业知识搜索 / 知识库RAG / 自定义RAG
+- 推荐知识层：企业原生搜索 / 知识库RAG / 自定义RAG
+- 难度门槛：三关是否全过
 - 推荐主工具：
-- 是否需要组合：是/否
 
 ## 推荐方案
-（说明单工具是否足够；如需组合，列出主工具、知识层、执行层）
+（说明为什么选这个 tier；如需组合，列出主工具、知识层、执行层）
 
 ## 知识源与权限
 | 知识源 | 位置 | 权限 | 更新频率 | 引用要求 |
